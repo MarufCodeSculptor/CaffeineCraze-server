@@ -1,12 +1,11 @@
 const express = require('express');
 const app = express();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const cors = require('cors');
 require('dotenv').config();
 
 const user = process.env.DB_USER;
 const pass = process.env.DB_PASS;
-
 
 const port = process.env.PORT || 5000;
 
@@ -18,8 +17,7 @@ app.get('/', (req, res) => {
   res.send('server working fine');
 });
 
-const uri =
-  `mongodb+srv://${user}:${pass}@cluster1.6mzg5rv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster1`;
+const uri = `mongodb+srv://${user}:${pass}@cluster1.6mzg5rv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster1`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -32,8 +30,32 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
+    const database = client.db('coffieData');
+    const coffieCollectioin = database.collection('coffieInfo');
+
+    // posting data
+    app.post('/coffie', async (req, res) => {
+      const data = req.body;
+      console.log(`backend hitted successfully`, data);
+      const result = await coffieCollectioin.insertOne(data);
+      res.send(result);
+    });
+    // getting data
+    app.get('/coffie', async (req, res) => {
+      const cursor = coffieCollectioin.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+    // deleting data = >
+
+    app.delete('/coffie/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await coffieCollectioin.deleteOne(query);
+      res.send(result);
+      console.log(`delete hitted`);
+    });
     // Send a ping to confirm a successful connection
     await client.db('admin').command({ ping: 1 });
     console.log(
