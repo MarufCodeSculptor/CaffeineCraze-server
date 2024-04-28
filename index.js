@@ -32,27 +32,58 @@ async function run() {
   try {
     await client.connect();
     const database = client.db('coffieData');
-    const coffieCollectioin = database.collection('coffieInfo');
+    const coffieCollection = database.collection('coffieInfo');
 
     // posting data
     app.post('/coffie', async (req, res) => {
       const data = req.body;
       console.log(`backend hitted successfully`, data);
-      const result = await coffieCollectioin.insertOne(data);
+      const result = await coffieCollection.insertOne(data);
       res.send(result);
     });
     // getting data
-    app.get('/coffie', async (req, res) => {
-      const cursor = coffieCollectioin.find();
+    app.get('/coffies', async (req, res) => {
+      const cursor = coffieCollection.find();
       const result = await cursor.toArray();
       res.send(result);
     });
-    // deleting data = >
+    
+    // getting a sigle item =>
+    app.get('/coffie/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await coffieCollection.findOne(query);
+      res.send(result);
+    });
 
+    app.put('/coffie/:id', async (req, res) => {
+      const id = req.params.id;
+
+      console.log(`put hitted id ${id}`);
+
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updatedCoffee = req.body;
+      const coffie = {
+        $set: {
+          name: updatedCoffee.name,
+          category: updatedCoffee.category,
+          details: updatedCoffee.details,
+          photoUrl: updatedCoffee.photoUrl,
+          supplier: updatedCoffee.supplier,
+          taste: updatedCoffee.taste,
+        },
+      };
+      const result = await coffieCollection.updateOne(filter, coffie, options);
+      res.send(result);
+      console.log(result);
+    });
+
+    // deleting data = >
     app.delete('/coffie/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
-      const result = await coffieCollectioin.deleteOne(query);
+      const result = await coffieCollection.deleteOne(query);
       res.send(result);
       console.log(`delete hitted`);
     });
